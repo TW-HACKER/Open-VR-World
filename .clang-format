@@ -1,0 +1,10 @@
+---
+BasedOnStyle: Google
+AlignAfterOpenBracket: DontAlign
+BreakBeforeBraces: Linux
+ColumnLimit: '120'
+IndentWidth: '4'
+SpaceBeforeParens: Never
+UseTab: Never
+
+...
