@@ -1,13 +1,9 @@
 include( CMakeParseArguments )
 
 # Adds a folder full of shaders for compilation
-function(bgfx_add_shaders arg)
-    if(ARGC LESS 3)
-        message(STATUS "arguments error when calling drogon_create_views")
-        return()
-    endif()
-    file(MAKE_DIRECTORY ${ARGV2})
-    file(GLOB_RECURSE SHADER_LIST ${ARGV1}/*.sc)
+function(bgfx_add_shaders compile_target source_dir target_dir)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${source_dir})
+    file(GLOB_RECURSE SHADER_LIST ${source_dir}/*.sc)
     set(SHADER_OUTPUT_LIST "")
     foreach(shader_source ${SHADER_LIST})
          file(RELATIVE_PATH
@@ -29,9 +25,6 @@ function(bgfx_add_shaders arg)
             set( TYPE "COMPUTE" )
             set( D3D_PREFIX "cs" )
         else()
-            set( TYPE "" )
-        endif()
-        if(TYPE STREQUAL "")
             message(FATAL_ERROR "Shaders filename must have fs_, ps_ or vs_ prefix. Got ${filename}")
         endif()
         set(input_path "${CMAKE_CURRENT_SOURCE_DIR}/${input_file}")
@@ -39,14 +32,15 @@ function(bgfx_add_shaders arg)
         set(depfile_path "${CMAKE_CURRENT_BINARY_DIR}/${input_file}.bin.d")
         add_custom_command(
             OUTPUT "${output_path}" 
+            BYPRODUCTS "${depfile_path}"
             COMMAND bgfx-shaderc
-            ARGS -f "${input_path}" -o "${output_path}" --type ${TYPE} --depends --platform linux --profile spirv
+            ARGS -f "${shader_source}" -o "${output_path}" --type "${TYPE}" --depends --platform linux --profile spirv
             COMMENT "Building shader ${input_file}"
             DEPFILE "${output_path}.d"
             VERBATIM
         )
         set(SHADER_OUTPUT_LIST ${SHADER_OUTPUT_LIST} ${output_path})
     endforeach()
-    add_custom_target(shader_compile_${ARGV0} ALL DEPENDS ${SHADER_OUTPUT_LIST})
-    add_dependencies(${ARGV0} shader_compile_${ARGV0})
+    add_custom_target(shader_compile_${compile_target} ALL DEPENDS ${SHADER_OUTPUT_LIST})
+    add_dependencies(${compile_target} shader_compile_${compile_target})
 endfunction()
