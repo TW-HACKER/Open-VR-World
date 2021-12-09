@@ -4,6 +4,7 @@
 #include "bgfx/bgfx.h"
 #include "bgfx/platform.h"
 #include "bx/math.h"
+#include "bx/float4x4_t.h"
 #include "GLFW/glfw3.h"
 #if BX_PLATFORM_LINUX || BX_PLATFORM_BSD 
     #define GLFW_EXPOSE_NATIVE_X11
@@ -115,21 +116,20 @@ int main(void)
     bgfx::VertexBufferHandle vbh = bgfx::createVertexBuffer(bgfx::makeRef(cubeVertices, sizeof(cubeVertices)), pcvDecl);
     bgfx::IndexBufferHandle ibh = bgfx::createIndexBuffer(bgfx::makeRef(cubeTriList, sizeof(cubeTriList)));
 
-    bgfx::ShaderHandle vsh = loadShader("vs_cubes.sc.bin");
-    bgfx::ShaderHandle fsh = loadShader("fs_cubes.sc.bin");
+    bgfx::ShaderHandle vsh = loadShader("vs_cubes.bin");
+    bgfx::ShaderHandle fsh = loadShader("fs_cubes.bin");
     bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
 
+    bx::float4x4_t view;
+    float proj[16];
+    float mtx[16];
+    const bx::Vec3 at = {0.0f, 0.0f,  0.0f};
+    const bx::Vec3 eye = {0.0f, 0.0f, -5.0f};
+    bx::mtxLookAt((float*)&view, eye, at);
+    bx::mtxProj(proj, 60.0f, float(WNDW_WIDTH) / float(WNDW_HEIGHT), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+    bgfx::setViewTransform(0, (float*)&view, proj);
     while(!glfwWindowShouldClose(window)) 
     {
-        //bgfx::touch(0);
-        float view[16];
-        const bx::Vec3 at = {0.0f, 0.0f,  0.0f};
-        const bx::Vec3 eye = {0.0f, 0.0f, -5.0f};
-        bx::mtxLookAt(view, eye, at);
-        float proj[16];
-        float mtx[16];
-        bx::mtxProj(proj, 60.0f, float(WNDW_WIDTH) / float(WNDW_HEIGHT), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-        bgfx::setViewTransform(0, view, proj);
         bx::mtxRotateXY(mtx, counter * 0.01f, counter * 0.01f);
         bgfx::setTransform(mtx);
 

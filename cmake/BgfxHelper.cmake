@@ -10,11 +10,14 @@ function(bgfx_add_shaders compile_target source_dir)
              input_file
              ${CMAKE_CURRENT_SOURCE_DIR}
              ${shader_source})
-        get_filename_component( filename "${shader_source}" NAME_WLE )
-        if(filename STREQUAL "varying.def")
+        get_filename_component( base_name "${shader_source}" NAME_WLE )
+        get_filename_component( file_name "${shader_source}" NAME )
+        get_filename_component( file_dir "${shader_source}" DIRECTORY )
+        get_filename_component( base_dir "${input_file}" DIRECTORY )
+        if(file_name STREQUAL "varying.def.sc")
             continue()
         endif()
-        string( SUBSTRING "${filename}" 0 3 TYPE )
+        string( SUBSTRING "${base_name}" 0 3 TYPE )
         if( "${TYPE}" STREQUAL "fs_" )
             set( TYPE "FRAGMENT" )
         elseif( "${TYPE}" STREQUAL "vs_" )
@@ -22,18 +25,19 @@ function(bgfx_add_shaders compile_target source_dir)
         elseif( "${TYPE}" STREQUAL "cs_" )
             set( TYPE "COMPUTE" )
         else()
-            message(FATAL_ERROR "Shaders filename must have fs_, ps_ or vs_ prefix. Got ${filename}")
+            message(FATAL_ERROR "Shaders filename must have fs_, ps_ or vs_ prefix. Got ${file_name}")
         endif()
         set(input_path "${CMAKE_CURRENT_SOURCE_DIR}/${input_file}")
-        set(output_path "${CMAKE_CURRENT_BINARY_DIR}/${input_file}.bin")
-        set(depfile_path "${CMAKE_CURRENT_BINARY_DIR}/${input_file}.bin.d")
+        set(output_path "${CMAKE_CURRENT_BINARY_DIR}/${base_dir}/${base_name}.bin")
+        set(depfile_path "${CMAKE_CURRENT_BINARY_DIR}/${base_dir}/${base_name}.bin.d")
         add_custom_command(
             OUTPUT "${output_path}" 
             BYPRODUCTS "${depfile_path}"
             COMMAND bgfx-shaderc
             ARGS -f "${shader_source}" -o "${output_path}" --type "${TYPE}" --depends --platform linux --profile spirv
             COMMENT "Building shader ${input_file}"
-            DEPFILE "${output_path}.d"
+            DEPFILE "${depfile_path}"
+            DEPENDS "${shader_source}"
             VERBATIM
         )
         set(SHADER_OUTPUT_LIST ${SHADER_OUTPUT_LIST} ${output_path})
